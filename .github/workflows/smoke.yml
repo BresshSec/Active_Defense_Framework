@@ -1,0 +1,22 @@
+name: Smoke test
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install reportlab
+      - run: python -m compileall -q Athenadef.py athena-pdf-defense.py athena
+      - run: python Athenadef.py file README.md --checks entropy,strings,urls,archive -o /tmp/athena-smoke
+      - run: test -n "$(find /tmp/athena-smoke -name '*.pdf' -print -quit)"
+
