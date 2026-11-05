@@ -5,6 +5,7 @@ from email.parser import BytesParser
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from athena import cases, doctor
 from athena.modules import archive_defense, batch_defense, email_defense, office_defense
 
 
@@ -74,6 +75,23 @@ class ModuleTests(unittest.TestCase):
             files, omitted = batch_defense.collect_files(folder, True, 10, exclude=reports)
             self.assertEqual([p.name for p in files], ["sample.txt"])
             self.assertEqual(omitted, 0)
+
+    def test_case_manifest_tracks_new_report(self):
+        with TemporaryDirectory() as directory:
+            case_id, case_dir = cases.create_case("file", Path(directory))
+            report = case_dir / "sample.pdf"
+            report.write_bytes(b"report")
+            from datetime import datetime, timezone
+            started = datetime.now(timezone.utc).isoformat()
+            manifest = cases.save_manifest(case_id, case_dir, "file", started, case_dir, 0)
+            self.assertTrue(manifest.is_file())
+            self.assertIn(str(report), manifest.read_text(encoding="utf-8"))
+
+    def test_doctor_reports_missing_signature_directory(self):
+        with TemporaryDirectory() as directory:
+            rows, status = doctor.inspect(Path(directory))
+            self.assertTrue(rows)
+            self.assertIn("no standard database files", status)
 
 
 if __name__ == "__main__":
