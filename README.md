@@ -1,6 +1,6 @@
 # Athena Defense
 
-An interactive, local defense framework for Kali Linux. Launch it by typing `Athenadef`. The blue module manager offers PDF Defense and File Defense. The PDF module retains its red banner. Each module combines selected results in one PDF report plus a JSON evidence file.
+An interactive, local defense framework for Kali Linux. Launch it by typing `Athenadef`. On a Kali desktop with Xfce, it opens a new maximized terminal window. On a headless system it runs in the current terminal. The blue module manager offers four modules: PDF, File, Email, and Archive Defense. The PDF module retains its red banner. Each module combines selected results in one PDF report plus a JSON evidence file.
 
 ## Install
 
@@ -10,7 +10,7 @@ From the cloned repository, run:
 bash install-kali.sh
 ```
 
-The installer uses Kali's package repositories and installs Python, ReportLab, `file`, Poppler tools, `qpdf`, `pdfid`, `pdf-parser`, ClamAV, and ExifTool. It creates `/usr/local/bin/Athenadef`, pointing to this checkout. Keep the repository in place after installation. Kali removed `peepdf` from its rolling repositories because it depends on Python 2, so PDF Defense uses `pdf-parser` for object inspection. ClamAV signatures need to be current before relying on its result.
+The installer uses Kali's package repositories and installs Python, ReportLab, `file`, Poppler tools, `qpdf`, `pdfid`, `pdf-parser`, ClamAV, ExifTool, and Xfce Terminal. On amd64/arm64 it also attempts to install optional `binwalk3`. It creates `/usr/local/bin/Athenadef`, pointing to this checkout. Keep the repository in place after installation. Kali removed `peepdf` from its rolling repositories because it depends on Python 2, so PDF Defense uses `pdf-parser` for object inspection. ClamAV signatures need to be current before relying on its result.
 
 ## Interactive use
 
@@ -18,7 +18,7 @@ The installer uses Kali's package repositories and installs Python, ReportLab, `
 Athenadef
 ```
 
-Choose module 1 (PDF Defense) or 2 (File Defense), then enter a file path. Each module initially selects Defense checks. Type check numbers to toggle them, `a` for all, `d` for Defense, `h` for Hunting, `r` to clear, or press Enter to run. Reports are written to `athena-report/` in the current directory.
+Choose module 1 (PDF Defense), 2 (File Defense), 3 (Email Defense, for `.eml`), or 4 (Archive Defense, for `.zip`), then enter a file path. Each module initially selects Defense checks. Type check numbers to toggle them, `a` for all, `d` for Defense, `h` for Hunting, or press Enter to run. PDF and File modules also support `r` to clear. Reports are written to `athena-report/` in the current directory. Use `Athenadef --inline` to stay in your current terminal.
 
 ## Optional command line use
 
@@ -26,9 +26,11 @@ Choose module 1 (PDF Defense) or 2 (File Defense), then enter a file path. Each 
 python3 athena-pdf-defense.py ~/analisi-pdf/example.pdf --checks all
 Athenadef pdf ~/analisi-pdf/example.pdf --checks pdfid,qpdf,urls -o ~/reports
 Athenadef file ~/Downloads/sample.zip --checks all
+Athenadef email ~/Downloads/message.eml --checks all
+Athenadef archive ~/Downloads/sample.zip --checks all
 ```
 
-PDF Defense: real file type, PDF metadata, suspicious PDF keywords, structural validation, antivirus signatures. PDF Hunting: text, objects, embedded images, metadata, and literal URL strings. File Defense: type, MIME, antivirus signatures, metadata. File Hunting: entropy, printable strings, literal URLs, and ZIP member listing without extraction. URL scans never visit addresses and may miss compressed or encoded URLs. All checks are static; none executes samples or opens attachments. Each external tool has a timeout. Missing tools and failed checks are recorded in the report.
+PDF Defense: real file type, PDF metadata, suspicious PDF keywords, structural validation, antivirus signatures. PDF Hunting: text, objects, attachments, signatures, embedded images, metadata, and literal URL strings. File Defense: type, MIME, antivirus signatures, metadata. File Hunting: embedded signatures (`binwalk3`), entropy, printable strings, literal URLs, and ZIP member listing without extraction. Email Defense: headers, sender/reply-to mismatch, authentication header claims, attachment names/types/sizes/hashes, and literal links. Archive Defense: ZIP members, path traversal, symlinks, encryption flags, compression ratios, and suspicious names. URL scans never visit addresses and may miss compressed or encoded URLs. All checks are static; none executes samples or opens attachments. Each external tool has a timeout. Missing tools and failed checks are recorded in the report.
 
 The report may contain confidential text from the PDF. Store and share it accordingly. No automated result proves that a file is safe or that the sender and transaction are legitimate.
 
