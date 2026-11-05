@@ -64,6 +64,17 @@ class ModuleTests(unittest.TestCase):
             self.assertEqual(result["status"], "ok")
             self.assertIn("attachments", result["checks"])
 
+    def test_batch_excludes_previous_reports(self):
+        with TemporaryDirectory() as directory:
+            folder = Path(directory)
+            reports = folder / "athena-report"
+            reports.mkdir()
+            (folder / "sample.txt").write_text("sample")
+            (reports / "old.pdf").write_text("old report")
+            files, omitted = batch_defense.collect_files(folder, True, 10, exclude=reports)
+            self.assertEqual([p.name for p in files], ["sample.txt"])
+            self.assertEqual(omitted, 0)
+
 
 if __name__ == "__main__":
     unittest.main()
