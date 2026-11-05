@@ -5,7 +5,7 @@ from email.parser import BytesParser
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from athena.modules import archive_defense, email_defense, office_defense
+from athena.modules import archive_defense, batch_defense, email_defense, office_defense
 
 
 class ModuleTests(unittest.TestCase):
@@ -47,6 +47,22 @@ class ModuleTests(unittest.TestCase):
             result = office_defense.inspect_ooxml(document)
             self.assertEqual(result["status"], "ok")
             self.assertEqual(result["count"], 2)
+
+    def test_batch_scans_eml_and_skips_symlink(self):
+        with TemporaryDirectory() as directory:
+            folder = Path(directory)
+            message = folder / "message.eml"
+            message.write_bytes(b"From: alice@example.org\nTo: bob@example.org\nSubject: Test\n\nHello")
+            try:
+                (folder / "linked.eml").symlink_to(message)
+            except (OSError, NotImplementedError):
+                pass
+            files, omitted = batch_defense.collect_files(folder, recursive=False, max_files=10)
+            self.assertEqual(files, [message])
+            self.assertEqual(omitted, 0)
+            result = batch_defense.scan_file(message, profile="quick", max_size=1024)
+            self.assertEqual(result["status"], "ok")
+            self.assertIn("attachments", result["checks"])
 
 
 if __name__ == "__main__":
