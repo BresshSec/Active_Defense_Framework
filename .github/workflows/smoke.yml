@@ -26,5 +26,8 @@ jobs:
       - run: python Athenadef.py --inline file README.md --checks file,mime -o /tmp/athena-smoke
       - run: python Athenadef.py --inline batch tests --profile quick --max-files 2 -o /tmp/athena-smoke
       - run: python Athenadef.py --inline yara README.md -o /tmp/athena-smoke
+      - run: python Athenadef.py --inline file README.md --checks entropy
+      - run: python Athenadef.py --inline cases
+      - run: test -n "$(find "$HOME/AthenaDefense/cases" -name 'case.json' -print -quit)"
       - run: test -n "$(find /tmp/athena-smoke -name '*.pdf' -print -quit)"
 
