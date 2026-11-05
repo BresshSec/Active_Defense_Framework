@@ -5,7 +5,7 @@ from email.parser import BytesParser
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from athena.modules import archive_defense, email_defense
+from athena.modules import archive_defense, email_defense, office_defense
 
 
 class ModuleTests(unittest.TestCase):
@@ -36,6 +36,17 @@ class ModuleTests(unittest.TestCase):
                     archive.infolist(), ["inventory", "paths", "encryption", "compression", "names"])
             self.assertEqual(results["paths"]["count"], 1)
             self.assertTrue(any("unsafe path" in note for note in observations))
+
+    def test_ooxml_macro_and_external_relationship(self):
+        with TemporaryDirectory() as directory:
+            document = Path(directory) / "sample.docx"
+            with zipfile.ZipFile(document, "w") as archive:
+                archive.writestr("word/vbaProject.bin", b"test")
+                archive.writestr("word/_rels/document.xml.rels",
+                                 b'<Relationships><Relationship TargetMode="External" Target="https://example.org"/></Relationships>')
+            result = office_defense.inspect_ooxml(document)
+            self.assertEqual(result["status"], "ok")
+            self.assertEqual(result["count"], 2)
 
 
 if __name__ == "__main__":
