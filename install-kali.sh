@@ -14,7 +14,7 @@ fi
 
 packages=(
   python3 python3-reportlab file poppler-utils qpdf pdfid pdf-parser
-  clamav clamav-freshclam libimage-exiftool-perl xfce4-terminal oletools
+  clamav clamav-freshclam libimage-exiftool-perl xfce4-terminal oletools yara
 )
 
 echo 'Installing Athena Defense dependencies from Kali repositories...'
@@ -35,7 +35,7 @@ sudo chmod 755 /usr/local/bin/Athenadef
 
 echo
 echo 'Checking commands:'
-for command in python3 file pdfinfo pdfid qpdf clamscan pdftotext pdf-parser pdfdetach pdfsig exiftool pdfimages xfce4-terminal binwalk3 oleid olevba mraptor msodde; do
+for command in python3 file pdfinfo pdfid qpdf clamscan pdftotext pdf-parser pdfdetach pdfsig exiftool pdfimages xfce4-terminal binwalk3 oleid olevba mraptor msodde yara yarac; do
   if command -v "$command" >/dev/null 2>&1; then
     printf '  OK      %s\n' "$command"
   else
