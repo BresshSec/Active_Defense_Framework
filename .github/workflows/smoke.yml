@@ -16,11 +16,15 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install reportlab
+      - run: sudo apt-get update && sudo apt-get install -y yara
       - run: python -m compileall -q Athenadef.py athena-pdf-defense.py athena
       - run: bash -n install-kali.sh
+      - run: yarac rules/athena_triage.yar /tmp/athena-rules.yarc
       - run: python -m unittest discover -s tests -v
+      - run: python Athenadef.py --inline doctor
       - run: python Athenadef.py file README.md --checks entropy,strings,urls,archive -o /tmp/athena-smoke
       - run: python Athenadef.py --inline file README.md --checks file,mime -o /tmp/athena-smoke
       - run: python Athenadef.py --inline batch tests --profile quick --max-files 2 -o /tmp/athena-smoke
+      - run: python Athenadef.py --inline yara README.md -o /tmp/athena-smoke
       - run: test -n "$(find /tmp/athena-smoke -name '*.pdf' -print -quit)"
 
