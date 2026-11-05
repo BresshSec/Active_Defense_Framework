@@ -153,7 +153,7 @@ def make_pdf(path, data):
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.enums import TA_CENTER
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Preformatted, Spacer
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Preformatted, Spacer, Table, TableStyle, PageBreak
     from xml.sax.saxutils import escape
 
     styles = getSampleStyleSheet()
@@ -170,10 +170,32 @@ def make_pdf(path, data):
                          ("Size", str(data["size_bytes"]) + " bytes"),
                          ("UTC", data["timestamp_utc"])):
         story.append(Paragraph(f"<b>{label}:</b> {escape(value)}", styles["Normal"]))
-    story += [Spacer(1, 14), Paragraph("Observations", styles["Heading2"])]
+    case_id = os.environ.get("ATHENA_CASE_ID") or data.get("case_id")
+    if case_id:
+        story.append(Paragraph(f"<b>Case:</b> {escape(case_id)}", styles["Normal"]))
+    status_counts = {}
+    for result in data["checks"].values():
+        status_counts[result["status"]] = status_counts.get(result["status"], 0) + 1
+    summary = ", ".join(f"{status}: {count}" for status, count in sorted(status_counts.items()))
+    story += [Spacer(1, 14), Paragraph("Overview", styles["Heading2"]),
+              Paragraph(f"<b>Checks:</b> {len(data['checks'])} | {escape(summary)}", styles["Normal"]),
+              Spacer(1, 8), Paragraph("Observations", styles["Heading2"])]
     for item in data["observations"]:
         story.append(Paragraph("• " + escape(item), styles["Normal"]))
     story += [Spacer(1, 8), Paragraph("Static checks cannot establish sender identity, business legitimacy, or absence of exploits.", styles["Italic"])]
+    rows = [["Check", "Status"]]
+    for name, result in list(data["checks"].items())[:40]:
+        rows.append([name[:65], result["status"]])
+    if len(data["checks"]) > 40:
+        rows.append([f"... {len(data['checks']) - 40} more in detail section", ""])
+    if len(rows) > 1:
+        table = Table(rows, colWidths=[360, 120], repeatRows=1)
+        table.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#17365d")),
+                                   ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                                   ("GRID", (0, 0), (-1, -1), 0.3, colors.grey),
+                                   ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                                   ("FONTSIZE", (0, 0), (-1, -1), 8)]))
+        story.extend([Spacer(1, 12), table, PageBreak()])
     for name, result in data["checks"].items():
         story.append(Paragraph(name + " — " + result["status"], styles["Heading2"]))
         lines = result["output"].splitlines() or ["(no output)"]
