@@ -41,6 +41,8 @@ CHECKS = [
     Check("clamscan", "Defense", "Local antivirus signatures", lambda p: ["clamscan", "--no-summary", "--", str(p)]),
     Check("pdftotext", "Hunting", "Extract readable text", lambda p: ["pdftotext", str(p), "-"]),
     Check("pdf-parser", "Hunting", "Enumerate PDF objects", lambda p: ["pdf-parser", "-a", str(p)]),
+    Check("pdfdetach", "Hunting", "List embedded attachments", lambda p: ["pdfdetach", "-list", str(p)]),
+    Check("pdfsig", "Hunting", "Inspect digital signatures", lambda p: ["pdfsig", str(p)]),
     Check("exiftool", "Hunting", "Inspect document metadata", lambda p: ["exiftool", str(p)]),
     Check("pdfimages", "Hunting", "List embedded page images", lambda p: ["pdfimages", "-list", str(p)]),
     Check("urls", "Hunting", "Find URL strings without visiting", None),
