@@ -3,9 +3,13 @@
 
 import argparse
 import os
+import shlex
+import shutil
+import subprocess
 import sys
+from pathlib import Path
 
-from athena.modules import file_defense, pdf_defense
+from athena.modules import archive_defense, email_defense, file_defense, pdf_defense
 
 BLUE = "\033[34m"
 RESET = "\033[0m"
@@ -27,25 +31,43 @@ def show_banner():
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Athena Defense module manager")
-    parser.add_argument("module", nargs="?", choices=("pdf", "file"))
+    parser.add_argument("--inline", action="store_true", help="Stay in the current terminal")
+    parser.add_argument("module", nargs="?", choices=("pdf", "file", "email", "archive"))
     parser.add_argument("module_args", nargs=argparse.REMAINDER)
     args = parser.parse_args(argv)
+    if not args.inline and not os.environ.get("ATHENA_CHILD") and (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")):
+        terminal = shutil.which("xfce4-terminal")
+        if terminal:
+            child_args = [sys.executable, str(Path(__file__).resolve()), "--inline"]
+            if args.module:
+                child_args += [args.module, *args.module_args]
+            try:
+                subprocess.Popen([terminal, "--maximize", "--hold", "--title=Athena Defense",
+                                  "--command=" + shlex.join(child_args)],
+                                 env={**os.environ, "ATHENA_CHILD": "1"}, cwd=os.getcwd(),
+                                 stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                 start_new_session=True)
+                print("Athena Defense opened in a new maximized terminal window.")
+                return 0
+            except OSError as exc:
+                print(f"Could not open a new window ({exc}); continuing here.", file=sys.stderr)
     show_banner()
-    if args.module == "pdf":
-        return pdf_defense.main(args.module_args)
-    if args.module == "file":
-        return file_defense.main(args.module_args)
+    modules = {"pdf": pdf_defense, "file": file_defense,
+               "email": email_defense, "archive": archive_defense}
+    if args.module:
+        return modules[args.module].main(args.module_args)
     while True:
-        print("Modules\n  1. PDF Defense  — structure, actions, objects, text\n  2. File Defense — type, signatures, strings, archives\n  Q. Quit")
+        print("Modules\n  1. PDF Defense     — structure, actions, objects, text\n  2. File Defense    — type, signatures, strings, archives\n  3. Email Defense   — headers, attachments, links\n  4. Archive Defense — paths, encryption, compression\n  Q. Quit")
         try:
             choice = input("Athenadef> ").strip().lower()
         except (KeyboardInterrupt, EOFError):
             print("\nCancelled")
             return 130
-        if choice == "1":
-            return pdf_defense.main([])
-        if choice == "2":
-            return file_defense.main([])
+        if choice in ("1", "2", "3", "4"):
+            module = (pdf_defense, file_defense, email_defense, archive_defense)[int(choice) - 1]
+            module.main([])
+            print()
+            continue
         if choice == "q":
             return 0
         print("Choose 1, 2 or Q.\n")
