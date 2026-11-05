@@ -18,12 +18,12 @@ OFFICE_SUFFIXES = {".doc", ".docm", ".docx", ".xls", ".xlsm", ".xlsx",
                    ".ppt", ".pptm", ".pptx", ".rtf"}
 
 
-def collect_files(directory, recursive, max_files):
+def collect_files(directory, recursive, max_files, exclude=None):
     candidates = directory.rglob("*") if recursive else directory.iterdir()
     files = []
     omitted = 0
     for path in candidates:
-        if path.is_symlink() or not path.is_file():
+        if path.is_symlink() or not path.is_file() or (exclude and path.is_relative_to(exclude)):
             continue
         if len(files) < max_files:
             files.append(path)
@@ -47,6 +47,8 @@ def scan_file(path, profile, max_size):
     checks["file"] = type_result
     suffix = path.suffix.lower()
     if suffix == ".pdf":
+        if type_result["status"] == "ok" and "PDF document" not in type_result["output"]:
+            notes.append("PDF extension does not match detected file type")
         checks["pdfid"] = run_check("pdfid", ["pdfid", str(path)], 30)
         if checks["pdfid"]["status"] == "ok":
             for label in ("/JS", "/JavaScript", "/OpenAction", "/Launch", "/EmbeddedFile"):
@@ -129,7 +131,8 @@ def main(argv=None):
         directory = args.directory.expanduser().resolve()
     if not directory.is_dir():
         parser.error("Directory not found")
-    files, omitted = collect_files(directory, args.recursive, args.max_files)
+    out = args.output_dir.expanduser().resolve()
+    files, omitted = collect_files(directory, args.recursive, args.max_files, exclude=out)
     if not files:
         print("No regular files found.")
         return 0
@@ -155,14 +158,16 @@ def main(argv=None):
     data = {"module": "Athena Batch Defense", "file": str(directory), "size_bytes": sum(item.get("size_bytes", 0) for item in checks.values()),
             "sha256": manifest.hexdigest(), "timestamp_utc": datetime.now(timezone.utc).isoformat(),
             "profile": args.profile, "recursive": args.recursive, "observations": summary, "checks": checks}
-    out = args.output_dir.expanduser().resolve()
     out.mkdir(parents=True, exist_ok=True)
     stem = "athena-batch-" + data["sha256"][:12]
     json_path = out / (stem + ".json")
     json_path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
     try:
         report = out / (stem + ".pdf")
-        make_pdf(report, data)
+        pdf_data = dict(data)
+        pdf_data["checks"] = {name: {"status": result["status"], "output": result["output"][:4000]}
+                              for name, result in checks.items()}
+        make_pdf(report, pdf_data)
     except ImportError:
         print("Install python3-reportlab to generate PDF reports.", file=sys.stderr)
         return 2
