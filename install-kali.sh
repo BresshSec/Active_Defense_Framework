@@ -14,7 +14,7 @@ fi
 
 packages=(
   python3 python3-reportlab file poppler-utils qpdf pdfid pdf-parser
-  peepdf clamav clamav-freshclam libimage-exiftool-perl
+  clamav clamav-freshclam libimage-exiftool-perl
 )
 
 echo 'Installing Athena PDF Defense dependencies from Kali repositories...'
@@ -23,7 +23,7 @@ sudo apt-get install -y "${packages[@]}"
 
 echo
 echo 'Checking commands:'
-for command in python3 file pdfinfo pdfid qpdf clamscan pdftotext pdf-parser peepdf exiftool pdfimages; do
+for command in python3 file pdfinfo pdfid qpdf clamscan pdftotext pdf-parser exiftool pdfimages; do
   if command -v "$command" >/dev/null 2>&1; then
     printf '  OK      %s\n' "$command"
   else
