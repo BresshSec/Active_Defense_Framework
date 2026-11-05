@@ -14,12 +14,15 @@ fi
 
 packages=(
   python3 python3-reportlab file poppler-utils qpdf pdfid pdf-parser
-  clamav clamav-freshclam libimage-exiftool-perl
+  clamav clamav-freshclam libimage-exiftool-perl xfce4-terminal
 )
 
 echo 'Installing Athena Defense dependencies from Kali repositories...'
 sudo apt-get update
 sudo apt-get install -y "${packages[@]}"
+if [[ "$(dpkg --print-architecture)" == amd64 || "$(dpkg --print-architecture)" == arm64 ]]; then
+  sudo apt-get install -y binwalk3 || echo 'Optional binwalk3 could not be installed; other checks remain available.'
+fi
 
 project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 if [[ ! -f "$project_dir/Athenadef.py" ]]; then
@@ -32,7 +35,7 @@ sudo chmod 755 /usr/local/bin/Athenadef
 
 echo
 echo 'Checking commands:'
-for command in python3 file pdfinfo pdfid qpdf clamscan pdftotext pdf-parser exiftool pdfimages; do
+for command in python3 file pdfinfo pdfid qpdf clamscan pdftotext pdf-parser pdfdetach pdfsig exiftool pdfimages xfce4-terminal binwalk3; do
   if command -v "$command" >/dev/null 2>&1; then
     printf '  OK      %s\n' "$command"
   else
