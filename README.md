@@ -10,7 +10,7 @@ Copy `athena-pdf-defense.py` and `install-kali.sh` into the same directory, then
 bash install-kali.sh
 ```
 
-The installer uses Kali's package repositories and installs Python, ReportLab, `file`, Poppler tools, `qpdf`, `pdfid`, `pdf-parser`, `peepdf`, ClamAV, and ExifTool. ClamAV signatures need to be current before relying on its result.
+The installer uses Kali's package repositories and installs Python, ReportLab, `file`, Poppler tools, `qpdf`, `pdfid`, `pdf-parser`, ClamAV, and ExifTool. Kali removed `peepdf` from its rolling repositories because it depends on Python 2, so the framework uses `pdf-parser` for object inspection. ClamAV signatures need to be current before relying on its result.
 
 ## Interactive use
 
