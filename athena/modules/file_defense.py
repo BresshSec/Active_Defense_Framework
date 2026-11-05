@@ -18,6 +18,7 @@ CHECKS = [
     Check("mime", "Defense", "Identify MIME type", lambda p: ["file", "--mime-type", "--", str(p)]),
     Check("clamscan", "Defense", "Check local antivirus signatures", lambda p: ["clamscan", "--no-summary", "--", str(p)]),
     Check("exiftool", "Defense", "Inspect metadata", lambda p: ["exiftool", str(p)]),
+    Check("binwalk3", "Hunting", "Find embedded file signatures", lambda p: ["binwalk3", str(p)]),
     Check("entropy", "Hunting", "Measure byte randomness", None),
     Check("strings", "Hunting", "Extract printable strings", None),
     Check("urls", "Hunting", "Find literal URL strings", None),
